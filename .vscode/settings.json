@@ -1,0 +1,9 @@
+{
+  "files.exclude": {
+    "keys.env": true,
+    "__pycache__": true,
+    ".vscode": true,
+    "krabchatbot": true,
+    ".gitignore": true
+  }
+}
