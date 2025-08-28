@@ -2,8 +2,10 @@
   "files.exclude": {
     "keys.env": true,
     "__pycache__": true,
-    ".vscode": true,
     "krabchatbot": true,
     ".gitignore": true
-  }
+  },
+  "python-envs.pythonProjects": [],
+  "python.defaultInterpreterPath": "/path/to/venv/bin/python",
+  "python.terminal.activateEnvironment": true
 }

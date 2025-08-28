@@ -5,6 +5,7 @@ class KrabBot(commands.Bot):
     messages = []
     message_head = -1
     message_tail = -1
+    ttsEnabled = False
 
     def __init__(self):
         super().__init__(
@@ -14,6 +15,14 @@ class KrabBot(commands.Bot):
             prefix='!',
             initial_channels=['KrabGor']
         )
+
+    async def enable_tts(self):
+        print("Enabling TTS")
+        self.ttsEnabled = True
+
+    async def disable_tts(self):
+        print("Disabling TTS")
+        self.ttsEnabled = False
 
     async def event_message(self, message):
         print(message.author.name, message.content)
