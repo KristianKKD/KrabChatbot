@@ -3,7 +3,9 @@
     "keys.env": true,
     "__pycache__": true,
     "krabchatbot": true,
-    ".gitignore": true
+    ".gitignore": true,
+    ".vscode": true,
+    "src\\__pycache__": true
   },
   "python-envs.pythonProjects": [],
   "python.defaultInterpreterPath": "/path/to/venv/bin/python",
