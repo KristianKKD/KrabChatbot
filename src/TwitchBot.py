@@ -1,3 +1,4 @@
+from sympy import content
 from twitchio.ext import commands
 import os
 import asyncio
@@ -10,6 +11,7 @@ class KrabBot(commands.Bot):
 
     model = None
     tts_inprogress = []
+    model_busy = False
 
     def __init__(self, tts_enabled = False, model = None, model_enabled = False):
         super().__init__(
@@ -49,46 +51,61 @@ class KrabBot(commands.Bot):
         usr = message.author.name
         content = message.content
 
-        incoming_message = usr + " says: " + content
-        #print(incoming_message)
+        print("-------------incoming_message: User: " + usr + "Message: " + content)
 
-        if self.tts_enabled:
-            asyncio.create_task(self.speak(incoming_message))
-
-        if self.model_enabled:
-            asyncio.create_task(self.handle_model_response(incoming_message))
-
+        if not self.model_busy: #don't tts if the model is yapping
+            if self.tts_enabled and not self.model_enabled:
+                asyncio.create_task(self.speak(content, prefix=usr + " messaged: ", useasync=True, is_ai=False))
+            elif self.model_enabled:
+                asyncio.create_task(self.handle_model_response(usr, content))
+            
         if self.model:
             asyncio.create_task(self.model.add_to_context(usr, content))
 
-    async def handle_model_response(self, incoming_message):
-        response = await self.model.generate_response(incoming_message, False)
+    async def handle_model_response(self, usr, content):
+        self.model_busy = True #don't respond until done
+
+        #generate a response and read it out
+        response = asyncio.create_task(self.model.generate_response(usr + " said: " + content))
+
+        #speak user message
+        await self.speak(content, prefix=usr + " messaged: ", useasync=False, is_ai=False)
+
+        #read response message out
+        response = await response
         if self.tts_enabled:
-            asyncio.create_task(self.speak(response))
+            await self.speak(response, prefix="Bot response: ", useasync=False, is_ai=True)
         else:
             print("Bot response: " + response)
 
+        #add to context
         if self.model:
-            asyncio.create_task(self.model.add_to_context("Me", response))
+            await self.model.add_to_context("Me", response)
 
     async def stop_tts(self):
         print("Stopping all TTS messages")
         for tts in self.tts_inprogress:
             tts.stop()
         self.tts_inprogress = []
+        self.model_busy = False
 
     async def clear_model_context(self):
         await self.model.clear_context()
 
-    async def speak(self, text):
+    async def speak(self, text = "", prefix = "", useasync = True, is_ai = False):
         tts = TextToSpeech()
         self.tts_inprogress.append(tts)
 
-        # Run speak in background so it doesn't block
+        #run in background so no blocking
         async def speak_and_cleanup():
-            await tts.speak(text)
+            await tts.speak(text, prefix=prefix)
             if tts in self.tts_inprogress:
                 self.tts_inprogress.remove(tts)
+            if is_ai:
+                self.model_busy = False
 
-        asyncio.create_task(speak_and_cleanup())
+        if useasync:
+            asyncio.create_task(speak_and_cleanup())
+        else:
+            await speak_and_cleanup()
 

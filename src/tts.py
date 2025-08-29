@@ -5,7 +5,7 @@ class TextToSpeech:
     text = ""
 
     def __init__(self):
-        #print("Creating TTS instance")
+        print("Creating TTS instance")
         self.engine = SystemEngine()
         self.stream = TextToAudioStream(self.engine)
 
@@ -13,8 +13,8 @@ class TextToSpeech:
         #print("Deleting TTS instance")
         self.stream.stop()
 
-    async def speak(self, text):
-        print("Speaking text:" + text)
+    async def speak(self, text, prefix = "Speaking text: "):
+        print(prefix + text)
         self.text = text
         self.stream.feed(text)
         await asyncio.to_thread(self.stream.play)

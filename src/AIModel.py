@@ -63,7 +63,7 @@ class AIModel:
         if raw:
             full_prompt = prompt
 
-        print(full_prompt)
+        #print(full_prompt)
         output = self.pipe(full_prompt, temperature=temperature, max_new_tokens=max_new_tokens)
 
         #remove the prompt from the output
