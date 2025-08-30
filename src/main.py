@@ -5,7 +5,7 @@ import os
 
 async def main():
     print("Starting KrabBot...")
-    twitchbot = KrabBot(tts_enabled=True, model_enabled=True)
+    twitchbot = KrabBot(tts_enabled=True)
     await twitchbot.connect()
 
     print ("Bot connected. Listening for messages...")
@@ -59,7 +59,7 @@ async def main():
             #manual model input
             if content.lower().startswith(model_input_keyword):
                 message = content[len(model_input_keyword):].strip()
-                await twitchbot.handle_model_response(('krabgor', message))
+                await twitchbot.handle_model_response('krabgor', message)
             else:
                 print("Invalid input:" + user_input)
 

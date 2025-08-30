@@ -1,19 +1,17 @@
-from sympy import content
 from twitchio.ext import commands
 import os
 import asyncio
-from AIModel import AIModel
-from TTS import TextToSpeech
+from TextToSpeech import TextToSpeech
+import Communicate
 
 class KrabBot(commands.Bot):
     tts_enabled = False
     model_enabled = False
 
-    model = None
     tts_inprogress = []
     model_busy = False
 
-    def __init__(self, tts_enabled = False, model = None, model_enabled = False):
+    def __init__(self, tts_enabled = False, model_enabled = False):
         super().__init__(
             token=os.environ["TWITCH_TOKEN"],
             client_id=os.environ["TWITCH_CLIENT_ID"],
@@ -22,8 +20,6 @@ class KrabBot(commands.Bot):
             initial_channels=['KrabGor']
         )
         
-        self.model = model
-
         self.tts_enabled = tts_enabled
         self.model_enabled = model_enabled
 
@@ -40,13 +36,6 @@ class KrabBot(commands.Bot):
         print("Model enabled: " + str(enabled))
         self.model_enabled = enabled
 
-        if enabled:
-            if self.model is None:
-                self.model = AIModel()
-            asyncio.create_task(self.model.load_model())
-        elif not enabled:
-            self.model = None
-
     async def event_message(self, message):
         usr = message.author.name
         content = message.content
@@ -59,28 +48,28 @@ class KrabBot(commands.Bot):
             elif self.model_enabled:
                 asyncio.create_task(self.handle_model_response(usr, content))
             
-        if self.model:
-            asyncio.create_task(self.model.add_to_context(usr, content))
+        #add to context
+        Communicate.add_to_context(usr, content)
 
     async def handle_model_response(self, usr, content):
         self.model_busy = True #don't respond until done
 
-        #generate a response and read it out
-        response = asyncio.create_task(self.model.generate_response(usr + " said: " + content))
+        #generate a response
+        response = await asyncio.to_thread(Communicate.generate_response, f"{usr} said: {content}")
 
-        #speak user message
+        #speak
         await self.speak(content, prefix=usr + " messaged: ", useasync=False, is_ai=False)
 
         #read response message out
-        response = await response
         if self.tts_enabled:
             await self.speak(response, prefix="Bot response: ", useasync=False, is_ai=True)
         else:
             print("Bot response: " + response)
 
         #add to context
-        if self.model:
-            await self.model.add_to_context("Me", response)
+        Communicate.add_to_context("Me", response)
+
+        self.model_busy = False
 
     async def stop_tts(self):
         print("Stopping all TTS messages")
@@ -90,7 +79,7 @@ class KrabBot(commands.Bot):
         self.model_busy = False
 
     async def clear_model_context(self):
-        await self.model.clear_context()
+        Communicate.clear_context()
 
     async def speak(self, text = "", prefix = "", useasync = True, is_ai = False):
         tts = TextToSpeech()
