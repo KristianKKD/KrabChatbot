@@ -21,7 +21,7 @@ async def main():
             await twitchbot.enable_tts((content.lower() == "true"))
             return True
 
-        async def stop_tts(_):
+        async def stop_tts(_ = None):
             await twitchbot.stop_tts()
             return True
 
@@ -59,7 +59,7 @@ async def main():
             #manual model input
             if content.lower().startswith(model_input_keyword):
                 message = content[len(model_input_keyword):].strip()
-                await twitchbot.handle_model_response(('krabgor', message))
+                asyncio.create_task(twitchbot.handle_model_response('krabgor', message))
             else:
                 print("Invalid input:" + user_input)
 

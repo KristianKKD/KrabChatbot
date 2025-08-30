@@ -3,7 +3,7 @@ from twitchio.ext import commands
 import os
 import asyncio
 from AIModel import AIModel
-from TTS import TextToSpeech
+from TextToSpeech import TextToSpeech
 
 class KrabBot(commands.Bot):
     tts_enabled = False
@@ -56,7 +56,7 @@ class KrabBot(commands.Bot):
         if not self.model_busy: #don't tts if the model is yapping
             if self.tts_enabled and not self.model_enabled:
                 asyncio.create_task(self.speak(content, prefix=usr + " messaged: ", useasync=True, is_ai=False))
-            elif self.model_enabled:
+            elif self.model_enabled and content[1] == '!':
                 asyncio.create_task(self.handle_model_response(usr, content))
             
         if self.model:
