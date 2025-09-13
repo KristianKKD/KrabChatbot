@@ -3,15 +3,17 @@ import os
 import asyncio
 from TextToSpeech import TextToSpeech
 import Communicate
+import keyboard
 
 class KrabBot(commands.Bot):
     tts_enabled = False
     model_enabled = False
+    twitch_input_enabled = False
 
     tts_inprogress = []
     model_busy = False
 
-    def __init__(self, tts_enabled = False, model_enabled = False):
+    def __init__(self, tts_enabled = False, model_enabled = False, twitch_input_enabled = False):
         super().__init__(
             token=os.environ["TWITCH_TOKEN"],
             client_id=os.environ["TWITCH_CLIENT_ID"],
@@ -20,8 +22,10 @@ class KrabBot(commands.Bot):
             initial_channels=['KrabGor']
         )
         
+        #enable the settings
         self.tts_enabled = tts_enabled
         self.model_enabled = model_enabled
+        self.twitch_input_enabled = twitch_input_enabled
 
     async def connect(self):
         await super().connect()
@@ -33,16 +37,30 @@ class KrabBot(commands.Bot):
         self.tts_enabled = enabled
 
     async def enable_model(self, enabled):
+        print("Model currently broken...")
+        self.model_enabled = False
+        return
+
         print("Model enabled: " + str(enabled))
         self.model_enabled = enabled
+
+    async def enable_twitch_input(self, enabled):
+        print("Twitch input enabled: " + str(enabled))
+        self.twitch_input_enabled = enabled
 
     async def event_message(self, message):
         usr = message.author.name
         content = message.content
 
+        if len(content) <= 1 or content[0] != '!':
+            return #ignore commands too small
+        content = content[1:] #strip the !
+
         print("-------------incoming_message: User: " + usr + "Message: " + content)
 
-        if not self.model_busy: #don't tts if the model is yapping
+        if self.twitch_input_enabled:
+            asyncio.create_task(self.process_twitch_input(content))
+        elif not self.model_busy: #don't tts if the model is yapping
             if self.tts_enabled and not self.model_enabled:
                 asyncio.create_task(self.speak(content, prefix=usr + " messaged: ", useasync=True, is_ai=False))
             elif self.model_enabled:
@@ -98,3 +116,20 @@ class KrabBot(commands.Bot):
         else:
             await speak_and_cleanup()
 
+    async def process_twitch_input(self, content):
+        #print("Processing twitch input: " + content)
+
+        translated_inputs = {
+                            "forward": "w",
+                            "back": "s",
+                            "left": "a",
+                            "right": "d",
+                            "jump": "space",
+                            "attack": "lmb"
+                            }
+
+        if content not in translated_inputs:
+            return
+
+        #press and release the key
+        keyboard.press_and_release(translated_inputs[content])

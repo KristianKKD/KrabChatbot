@@ -2,11 +2,15 @@ from dotenv import load_dotenv
 from TwitchBot import KrabBot
 import asyncio
 import os
+from DiscordIntegration import create_discord_bot
 
 async def main():
     print("Starting KrabBot...")
-    twitchbot = KrabBot(tts_enabled=True)
-    await twitchbot.connect()
+    twitch_bot = KrabBot(tts_enabled=True)
+    await twitch_bot.connect()
+
+    bot = create_discord_bot()
+    discord_task = asyncio.create_task(bot.start(os.getenv("DISCORD_BOT_TOKEN")))
 
     print ("Bot connected. Listening for messages...")
     while True:
@@ -14,21 +18,26 @@ async def main():
             return False
 
         async def handle_enable_model(content = "true"):
-            await twitchbot.enable_model((content.lower() == "true"))
+            await twitch_bot.enable_model((content.lower() == "true"))
             return True
 
         async def handle_enable_message_tts(content = "true"):
-            await twitchbot.enable_tts((content.lower() == "true"))
+            await twitch_bot.enable_tts((content.lower() == "true"))
+            return True
+
+        async def handle_enable_twitch_input(content = "true"):
+            await twitch_bot.enable_twitch_input((content.lower() == "true"))
             return True
 
         async def stop_tts(_):
-            await twitchbot.stop_tts()
+            await twitch_bot.stop_tts()
             return True
 
         commands = {
             "exit": handle_exit,
             "enabletts": handle_enable_message_tts,
             "enablemodel": handle_enable_model,
+            "enabletwitchinput": handle_enable_twitch_input,
             "stoptts": stop_tts,
         }
 
@@ -59,7 +68,7 @@ async def main():
             #manual model input
             if content.lower().startswith(model_input_keyword):
                 message = content[len(model_input_keyword):].strip()
-                await twitchbot.handle_model_response('krabgor', message)
+                await twitch_bot.handle_model_response('krabgor', message)
             else:
                 print("Invalid input:" + user_input)
 
