@@ -2,15 +2,18 @@ from dotenv import load_dotenv
 from TwitchBot import KrabBot
 import asyncio
 import os
-from DiscordIntegration import create_discord_bot
+from TTSManager import TextToSpeech
+from DiscordIntegration import DiscordBot
 
 async def main():
     print("Starting KrabBot...")
-    twitch_bot = KrabBot(tts_enabled=True)
-    await twitch_bot.connect()
+    
+    #bot = None
+    bot = DiscordBot()
+    asyncio.create_task(bot.start(os.getenv("DISCORD_BOT_TOKEN")))
 
-    bot = create_discord_bot()
-    discord_task = asyncio.create_task(bot.start(os.getenv("DISCORD_BOT_TOKEN")))
+    twitch_bot = KrabBot(tts_enabled=True, discord_bot=bot)
+    await twitch_bot.connect()
 
     print ("Bot connected. Listening for messages...")
     while True:
@@ -33,12 +36,29 @@ async def main():
             await twitch_bot.stop_tts()
             return True
 
+        async def manual_tts(content):
+            tts = TextToSpeech(id=0)
+            await tts.speak(text=content, discord_bot=bot, prefix="")
+            return True
+
+        async def web_tts(content):
+            tts = TextToSpeech()
+            tts.send_to_web(content)
+            return True
+        
+        async def disconnect_discord(_):
+            bot.disconnect()
+            return True
+
         commands = {
             "exit": handle_exit,
             "enabletts": handle_enable_message_tts,
             "enablemodel": handle_enable_model,
             "enabletwitchinput": handle_enable_twitch_input,
+            "tts": manual_tts,
+            "webtts": web_tts,            
             "stoptts": stop_tts,
+            "disconnectdiscord": disconnect_discord
         }
 
         model_input_keyword = "input:"

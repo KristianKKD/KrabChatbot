@@ -1,7 +1,7 @@
 from twitchio.ext import commands
 import os
 import asyncio
-from TextToSpeech import TextToSpeech
+from TTSManager import TextToSpeech
 import Communicate
 import keyboard
 
@@ -13,7 +13,9 @@ class KrabBot(commands.Bot):
     tts_inprogress = []
     model_busy = False
 
-    def __init__(self, tts_enabled = False, model_enabled = False, twitch_input_enabled = False):
+    discord_bot = None
+
+    def __init__(self, tts_enabled = False, model_enabled = False, twitch_input_enabled = False, discord_bot = None):
         super().__init__(
             token=os.environ["TWITCH_TOKEN"],
             client_id=os.environ["TWITCH_CLIENT_ID"],
@@ -26,6 +28,7 @@ class KrabBot(commands.Bot):
         self.tts_enabled = tts_enabled
         self.model_enabled = model_enabled
         self.twitch_input_enabled = twitch_input_enabled
+        self.discord_bot = discord_bot
 
     async def connect(self):
         await super().connect()
@@ -62,7 +65,7 @@ class KrabBot(commands.Bot):
             asyncio.create_task(self.process_twitch_input(content))
         elif not self.model_busy: #don't tts if the model is yapping
             if self.tts_enabled and not self.model_enabled:
-                asyncio.create_task(self.speak(content, prefix=usr + " messaged: ", useasync=True, is_ai=False))
+                asyncio.create_task(self.speak(content, prefix=usr + " messaged: ", use_async=True, is_ai=False))
             elif self.model_enabled:
                 asyncio.create_task(self.handle_model_response(usr, content))
             
@@ -76,11 +79,11 @@ class KrabBot(commands.Bot):
         response = await asyncio.to_thread(Communicate.generate_response, f"{usr} said: {content}")
 
         #speak
-        await self.speak(content, prefix=usr + " messaged: ", useasync=False, is_ai=False)
+        await self.speak(content, prefix=usr + " messaged: ", use_async=False, is_ai=False)
 
         #read response message out
         if self.tts_enabled:
-            await self.speak(response, prefix="Bot response: ", useasync=False, is_ai=True)
+            await self.speak(response, prefix="Bot response: ", use_async=False, is_ai=True)
         else:
             print("Bot response: " + response)
 
@@ -99,19 +102,22 @@ class KrabBot(commands.Bot):
     async def clear_model_context(self):
         Communicate.clear_context()
 
-    async def speak(self, text = "", prefix = "", useasync = True, is_ai = False):
-        tts = TextToSpeech()
+    async def speak(self, text = "", prefix = "", use_async = True, is_ai = False, web = False):
+        tts = TextToSpeech(id = len(self.tts_inprogress))
         self.tts_inprogress.append(tts)
 
         #run in background so no blocking
         async def speak_and_cleanup():
-            await tts.speak(text, prefix=prefix)
+            # if web:
+            #     await tts.send_to_web(text, prefix)
+            # else:
+            await tts.speak(text=text, discord_bot=self.discord_bot, prefix=prefix)
             if tts in self.tts_inprogress:
                 self.tts_inprogress.remove(tts)
             if is_ai:
                 self.model_busy = False
 
-        if useasync:
+        if use_async:
             asyncio.create_task(speak_and_cleanup())
         else:
             await speak_and_cleanup()

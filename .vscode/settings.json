@@ -2,9 +2,11 @@
   "files.exclude": {
     "__pycache__": true,
     "krabchatbot": true,
-    ".gitignore": true,
     ".vscode": true,
-    "src\\__pycache__": true
+    "src\\__pycache__": true,
+    "requirements.txt": true,
+    "setup_venv.sh": true,
+    "keys.env": true
   },
   "python-envs.pythonProjects": [],
   "python.defaultInterpreterPath": "/path/to/venv/bin/python",
