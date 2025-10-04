@@ -3,9 +3,10 @@ from discord.ext import commands
 from discord.client import VoiceClient
 import asyncio
 
-#VOICE_CHANNEL_ID = 1416079575628251167 #DiscGor
-VOICE_CHANNEL_ID = 471406637643464724 #kami weebs
+VOICE_CHANNEL_ID = 1416079575628251167 #DiscGor stream
+#VOICE_CHANNEL_ID = 471406637643464724 #kami weebs
 #VOICE_CHANNEL_ID = 1201274493289648239 #kami chamber
+#VOICE_CHANNEL_ID = 389460211666255882 #kami f
 
 class DiscordBot(commands.Bot): 
     play_queue = []
@@ -51,9 +52,11 @@ class DiscordBot(commands.Bot):
 
             voice_client : VoiceClient = self.voice_clients[0]
             try:
-                source = discord.FFmpegPCMAudio(self.play_queue[0])
+                file = self.play_queue[0]
+                source = discord.FFmpegPCMAudio(file)
                 voice_client.play(source=source, after=play_callback)
-                #print("Playing " + file_path)
+                #print("Playing " + file)
+                
             except Exception as e:
                 print("Error playing file: " + str(e))
 

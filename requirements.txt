@@ -1,7 +1,14 @@
-asyncio
+#python 3.10.6
+
 twitchio
-gc
-RealtimeTTS
-RealtimeTTS[system]
 dotenv
+discord
+RealtimeTTS[azureengine]
+RealtimeTTS[system]
 requests
+flask
+ffmpeg
+websocket
+keyboard
+PyNaCl
+ffprobe

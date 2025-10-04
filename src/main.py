@@ -4,15 +4,30 @@ import asyncio
 import os
 from TTSManager import TextToSpeech
 from DiscordIntegration import DiscordBot
+from OBSIntegration import OBSComms
 
 async def main():
     print("Starting KrabBot...")
     
-    #bot = None
+    bot = None
     bot = DiscordBot()
     asyncio.create_task(bot.start(os.getenv("DISCORD_BOT_TOKEN")))
 
-    twitch_bot = KrabBot(tts_enabled=True, discord_bot=bot)
+    obs = None
+    #obs = OBSComms()
+
+    tts_enabled = True
+    model_enabled = False
+    twitch_input_enabled = False
+
+    twitch_bot = KrabBot(   
+                        tts_enabled=tts_enabled,
+                        model_enabled=model_enabled, 
+                        twitch_input_enabled=twitch_input_enabled, 
+                        discord_bot=bot, 
+                        obs_comms=obs
+                        )
+
     await twitch_bot.connect()
 
     print ("Bot connected. Listening for messages...")
@@ -38,12 +53,7 @@ async def main():
 
         async def manual_tts(content):
             tts = TextToSpeech(id=0)
-            await tts.speak(text=content, discord_bot=bot, prefix="")
-            return True
-
-        async def web_tts(content):
-            tts = TextToSpeech()
-            tts.send_to_web(content)
+            await tts.speak(text=content, user="UIGor", discord_bot=bot, obs_comms=obs)
             return True
         
         async def disconnect_discord(_):
@@ -56,7 +66,6 @@ async def main():
             "enablemodel": handle_enable_model,
             "enabletwitchinput": handle_enable_twitch_input,
             "tts": manual_tts,
-            "webtts": web_tts,            
             "stoptts": stop_tts,
             "disconnectdiscord": disconnect_discord
         }
@@ -100,4 +109,3 @@ if __name__ == "__main__":
         raise ValueError("TWITCH_TOKEN and TWITCH_CLIENT_ID must be set in the environment variables.")
     
     asyncio.run(main())
-
