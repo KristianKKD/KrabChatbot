@@ -6,6 +6,8 @@ from TTSManager import TextToSpeech
 from DiscordIntegration import DiscordBot
 from OBSIntegration import OBSComms
 
+#BUG:spam whilst the TTS is beign read out makes the files get replaced before the next tts is read out so it never gets read out, just reads the latest multiple times
+
 async def main():
     print("Starting KrabBot...")
     

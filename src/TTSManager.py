@@ -1,6 +1,6 @@
 import os
 from RealtimeTTS import TextToAudioStream
-#from RealtimeTTS import AzureEngine
+from RealtimeTTS import AzureEngine
 from RealtimeTTS import SystemEngine
 import asyncio
 import warnings
@@ -13,12 +13,16 @@ class TextToSpeech:
 
     def __init__(self, id):
         print("Creating TTS instance")
-        #self.engine = AzureEngine(speech_key=os.environ["AZURE_SPEECH_KEY"], service_region="uksouth")
-        #self.stream.engine.set_voice("LolaNeural")
-
-        self.engine = SystemEngine()
+        self.engine = AzureEngine(speech_key=os.environ["AZURE_SPEECH_KEY"], service_region="uksouth")
+        #self.engine = SystemEngine()
 
         self.stream = TextToAudioStream(self.engine)
+
+        #print(self.stream.engine.get_voices())
+
+        #self.stream.engine.set_voice("LolaNeural")
+        self.stream.engine.set_voice("FlorianMultilingualNeural")
+
         self.id = id
 
     def __del__(self):
