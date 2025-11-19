@@ -1,4 +1,6 @@
 from dotenv import load_dotenv
+from ElevenLabsTTS import ElevenLabsTTS
+from SpeechToText import SpeechToText
 from TwitchBot import KrabBot
 import asyncio
 import os
@@ -9,7 +11,8 @@ from SystemTTS import SystemTTS
 
 #BUG:spam whilst the TTS is beign read out makes the files get replaced before the next tts is read out so it never gets read out, just reads the latest multiple times
 
-#TODO: implement new voices for tts
+#TODO: [voice] hello i am reall cool
+#TODO: look into adding timings
 
 async def main():
     print("Starting KrabBot...")
@@ -17,13 +20,19 @@ async def main():
 #####    
     twitch_input_enabled = False
 
-    bot = None
-    obs = None
-    tts = None
+    bot = None #discord bot
+    obs = None #obs integration
+    tts = None #text to speech
+    stt = None #speech to text
 
-    tts = SystemTTS()
+    #stt = SpeechToText(api_key=os.environ["ELEVEN_LABS_KEY"], model_id="")
+    if stt is not None:
+        stt.start()
 
-    #bot = DiscordBot()
+    #tts = SystemTTS()
+    tts = ElevenLabsTTS(api_key=os.environ["ELEVEN_LABS_KEY"], voice="xJ6quMToF3QzDncP3TLF", model_id="")
+
+    bot = DiscordBot()
     if bot is not None:
         asyncio.create_task(bot.start(os.getenv("DISCORD_BOT_TOKEN")))
 
@@ -37,10 +46,10 @@ async def main():
                         filtered_words=load_filtered_words()
                         )
     await twitch_bot.connect()
-######
-
 
     print ("Bot connected. Listening for messages...")
+######
+
     while True:
         async def handle_exit(_):
             return False

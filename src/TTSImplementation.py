@@ -11,10 +11,19 @@ _tts_id_counter = 0
 class TextToSpeechBase(ABC):
     text : str
     id : int
+
+    voice : str
+    model_id : str
+    
     discord_bot : DiscordBot
 
-    def __init__(self, api_key="", voice=""):
+    def __init__(self, api_key="", voice="", model_id=""):
         print("Creating TTS instance")
+
+        self.voice = voice
+        self.model_id = model_id
+
+        self.discord_bot = None
 
         global _tts_id_counter
         self.id = _tts_id_counter
@@ -46,7 +55,7 @@ class TextToSpeechBase(ABC):
             obs_comms.hide_text()
 
     @abstractmethod
-    async def setup_engine(self, api_key, voice):
+    async def setup_engine(self, api_key, voice, model_id=""):
         """Initialize the TTS engine. Must be implemented by subclasses."""
         pass
 

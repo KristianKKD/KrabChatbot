@@ -8,7 +8,7 @@ class SystemTTS(TextToSpeechBase):
     def __init__(self, api_key="", voice=""):
         super().__init__(api_key=api_key, voice=voice)
 
-    def setup_engine(self, api_key, voice):
+    def setup_engine(self, api_key, voice, model_id=""):
         self.engine = SystemEngine()
         self.stream = TextToAudioStream(self.engine)
 
