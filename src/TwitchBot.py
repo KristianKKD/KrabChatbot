@@ -1,19 +1,32 @@
-from sympy import content
+from email.mime import message
 from twitchio.ext import commands
 import os
 import asyncio
-from AIModel import AIModel
-from TextToSpeech import TextToSpeech
+from TTSManager import TextToSpeech
+import OBSIntegration
+from TwitchPlays import process_twitch_input 
 
 class KrabBot(commands.Bot):
     tts_enabled = False
     model_enabled = False
+    twitch_input_enabled = False
 
-    model = None
     tts_inprogress = []
+
     model_busy = False
 
-    def __init__(self, tts_enabled = False, model = None, model_enabled = False):
+    discord_bot = None
+    obs_comms = None
+
+    filtered_words = []
+
+    def __init__(self,  tts_enabled = False,
+                        model_enabled = False, 
+                        twitch_input_enabled = False, 
+                        discord_bot = None, 
+                        obs_comms = None,
+                        filtered_words = []
+                ):
         super().__init__(
             token=os.environ["TWITCH_TOKEN"],
             client_id=os.environ["TWITCH_CLIENT_ID"],
@@ -22,10 +35,13 @@ class KrabBot(commands.Bot):
             initial_channels=['KrabGor']
         )
         
-        self.model = model
-
+        #enable the settings
         self.tts_enabled = tts_enabled
         self.model_enabled = model_enabled
+        self.twitch_input_enabled = twitch_input_enabled
+        self.discord_bot = discord_bot
+        self.obs_comms = obs_comms
+        self.filtered_words = filtered_words
 
     async def connect(self):
         await super().connect()
@@ -37,50 +53,64 @@ class KrabBot(commands.Bot):
         self.tts_enabled = enabled
 
     async def enable_model(self, enabled):
+        print("Model currently broken...")
+        self.model_enabled = False
+        return
+
         print("Model enabled: " + str(enabled))
         self.model_enabled = enabled
 
-        if enabled:
-            if self.model is None:
-                self.model = AIModel()
-            asyncio.create_task(self.model.load_model())
-        elif not enabled:
-            self.model = None
+    async def enable_twitch_input(self, enabled):
+        print("Twitch input enabled: " + str(enabled))
+        self.twitch_input_enabled = enabled
 
     async def event_message(self, message):
         usr = message.author.name
         content = message.content
 
+        if (await self.has_slurs(content)):
+            content = '!filtered'
+
         print("-------------incoming_message: User: " + usr + "Message: " + content)
 
-        if not self.model_busy: #don't tts if the model is yapping
-            if self.tts_enabled and not self.model_enabled:
-                asyncio.create_task(self.speak(content, prefix=usr + " messaged: ", useasync=True, is_ai=False))
-            elif self.model_enabled and content[1] == '!':
-                asyncio.create_task(self.handle_model_response(usr, content))
-            
-        if self.model:
-            asyncio.create_task(self.model.add_to_context(usr, content))
+        if self.model_busy: #don't tts if the model is yapping
+            return
+        
+        #TWITCH PLAYS
+        if self.twitch_input_enabled: 
+            if await process_twitch_input(content): #True if accepted input
+                return
+
+        #check if tts command
+        if len(content) <= 1 or content[0] != '!':
+            return #ignore commands too small
+        content = content[1:] #strip the !
+        
+        #tts and model yap
+        if self.tts_enabled and not self.model_enabled:
+            asyncio.create_task(self.speak(content, user=usr, use_async=True, is_ai=False))
+        elif self.model_enabled:
+            asyncio.create_task(self.handle_model_response(usr, content))
 
     async def handle_model_response(self, usr, content):
         self.model_busy = True #don't respond until done
 
-        #generate a response and read it out
-        response = asyncio.create_task(self.model.generate_response(usr + " said: " + content))
+        #generate a response
+        response = await asyncio.to_thread(OBSIntegration.generate_response, f"{usr} said: {content}")
 
-        #speak user message
-        await self.speak(content, prefix=usr + " messaged: ", useasync=False, is_ai=False)
+        #speak
+        await self.speak(content, user=usr, use_async=False, is_ai=False)
 
         #read response message out
-        response = await response
         if self.tts_enabled:
-            await self.speak(response, prefix="Bot response: ", useasync=False, is_ai=True)
+            await self.speak(response, user="Bot", use_async=False, is_ai=True)
         else:
             print("Bot response: " + response)
 
         #add to context
-        if self.model:
-            await self.model.add_to_context("Me", response)
+        OBSIntegration.add_to_context("Me", response)
+
+        self.model_busy = False
 
     async def stop_tts(self):
         print("Stopping all TTS messages")
@@ -89,23 +119,28 @@ class KrabBot(commands.Bot):
         self.tts_inprogress = []
         self.model_busy = False
 
-    async def clear_model_context(self):
-        await self.model.clear_context()
-
-    async def speak(self, text = "", prefix = "", useasync = True, is_ai = False):
-        tts = TextToSpeech()
+    async def speak(self, text = "", user = "", use_async = True, is_ai = False):
+        tts = TextToSpeech(id = len(self.tts_inprogress))
         self.tts_inprogress.append(tts)
 
         #run in background so no blocking
         async def speak_and_cleanup():
-            await tts.speak(text, prefix=prefix)
+            await tts.speak(text=text, user=user, discord_bot=self.discord_bot, obs_comms=self.obs_comms)
             if tts in self.tts_inprogress:
                 self.tts_inprogress.remove(tts)
             if is_ai:
                 self.model_busy = False
 
-        if useasync:
+        #model response shouldn't be async so wait
+        if use_async:
             asyncio.create_task(speak_and_cleanup())
         else:
-            await speak_and_cleanup()
+            await speak_and_cleanup() #tts can be async
 
+    async def has_slurs(self, message):
+        lower = message.lower()
+        for word in self.filtered_words:
+            if word in lower:
+                return True
+        return False
+        

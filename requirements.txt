@@ -1,0 +1,14 @@
+#python 3.10.6
+
+twitchio
+dotenv
+discord
+RealtimeTTS[azure]
+RealtimeTTS[system]
+requests
+flask
+ffmpeg
+websocket
+keyboard
+PyNaCl
+ffprobe
