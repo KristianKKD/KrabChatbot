@@ -2,77 +2,61 @@ from dotenv import load_dotenv
 from TwitchBot import KrabBot
 import asyncio
 import os
-from TTSManager import TextToSpeech
+from SystemTTS import SystemTTS
 from DiscordIntegration import DiscordBot
 from OBSIntegration import OBSComms
+from SystemTTS import SystemTTS
 
 #BUG:spam whilst the TTS is beign read out makes the files get replaced before the next tts is read out so it never gets read out, just reads the latest multiple times
 
+#TODO: implement new voices for tts
+
 async def main():
     print("Starting KrabBot...")
-    
-    bot = None
-    bot = DiscordBot()
-    asyncio.create_task(bot.start(os.getenv("DISCORD_BOT_TOKEN")))
 
-    obs = None
-    #obs = OBSComms()
-
-    tts_enabled = True
-    model_enabled = False
+#####    
     twitch_input_enabled = False
 
-    slurs = load_filtered_words()
+    bot = None
+    obs = None
+    tts = None
+
+    tts = SystemTTS()
+
+    #bot = DiscordBot()
+    if bot is not None:
+        asyncio.create_task(bot.start(os.getenv("DISCORD_BOT_TOKEN")))
+
+    #obs = OBSComms()
 
     twitch_bot = KrabBot(   
-                        tts_enabled=tts_enabled,
-                        model_enabled=model_enabled, 
+                        tts_engine=tts,
                         twitch_input_enabled=twitch_input_enabled, 
                         discord_bot=bot, 
                         obs_comms=obs,
-                        filtered_words=slurs
+                        filtered_words=load_filtered_words()
                         )
-
     await twitch_bot.connect()
+######
+
 
     print ("Bot connected. Listening for messages...")
     while True:
         async def handle_exit(_):
             return False
 
-        async def handle_enable_model(content = "true"):
-            await twitch_bot.enable_model((content.lower() == "true"))
-            return True
-
-        async def handle_enable_message_tts(content = "true"):
-            await twitch_bot.enable_tts((content.lower() == "true"))
-            return True
-
-        async def handle_enable_twitch_input(content = "true"):
-            await twitch_bot.enable_twitch_input((content.lower() == "true"))
-            return True
-
         async def stop_tts(_):
             await twitch_bot.stop_tts()
             return True
 
         async def manual_tts(content):
-            tts = TextToSpeech(id=0)
-            await tts.speak(text=content, user="UIGor", discord_bot=bot, obs_comms=obs)
+            await twitch_bot.speak(text=content, user="UIGor")
             return True
         
-        async def disconnect_discord(_):
-            bot.disconnect()
-            return True
-
         commands = {
             "exit": handle_exit,
-            "enabletts": handle_enable_message_tts,
-            "enablemodel": handle_enable_model,
-            "enabletwitchinput": handle_enable_twitch_input,
             "tts": manual_tts,
             "stoptts": stop_tts,
-            "disconnectdiscord": disconnect_discord
         }
 
         model_input_keyword = "input:"
