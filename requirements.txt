@@ -4,7 +4,6 @@ twitchio
 dotenv
 discord
 RealtimeTTS[azure]
-RealtimeTTS[azureengine]
 RealtimeTTS[system]
 requests
 flask

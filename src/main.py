@@ -22,12 +22,15 @@ async def main():
     model_enabled = False
     twitch_input_enabled = False
 
+    slurs = load_filtered_words()
+
     twitch_bot = KrabBot(   
                         tts_enabled=tts_enabled,
                         model_enabled=model_enabled, 
                         twitch_input_enabled=twitch_input_enabled, 
                         discord_bot=bot, 
-                        obs_comms=obs
+                        obs_comms=obs,
+                        filtered_words=slurs
                         )
 
     await twitch_bot.connect()
@@ -103,6 +106,12 @@ async def main():
             else:
                 print("Invalid input:" + user_input)
 
+def load_filtered_words():
+    slurs = []
+    if os.path.exists("censoredwords"):
+        with open("censoredwords", "r") as f:
+            slurs = [line.strip().lower() for line in f if line.strip()]
+    return slurs
 
 ###############################################
 if __name__ == "__main__":

@@ -3,8 +3,8 @@ from discord.ext import commands
 from discord.client import VoiceClient
 import asyncio
 
-VOICE_CHANNEL_ID = 1416079575628251167 #DiscGor stream
-#VOICE_CHANNEL_ID = 471406637643464724 #kami weebs
+#VOICE_CHANNEL_ID = 1416079575628251167 #DiscGor stream
+VOICE_CHANNEL_ID = 471406637643464724 #kami weebs
 #VOICE_CHANNEL_ID = 1201274493289648239 #kami chamber
 #VOICE_CHANNEL_ID = 389460211666255882 #kami f
 

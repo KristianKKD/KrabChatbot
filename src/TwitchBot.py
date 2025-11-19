@@ -1,3 +1,4 @@
+from email.mime import message
 from twitchio.ext import commands
 import os
 import asyncio
@@ -17,11 +18,14 @@ class KrabBot(commands.Bot):
     discord_bot = None
     obs_comms = None
 
+    filtered_words = []
+
     def __init__(self,  tts_enabled = False,
                         model_enabled = False, 
                         twitch_input_enabled = False, 
                         discord_bot = None, 
-                        obs_comms = None
+                        obs_comms = None,
+                        filtered_words = []
                 ):
         super().__init__(
             token=os.environ["TWITCH_TOKEN"],
@@ -37,6 +41,7 @@ class KrabBot(commands.Bot):
         self.twitch_input_enabled = twitch_input_enabled
         self.discord_bot = discord_bot
         self.obs_comms = obs_comms
+        self.filtered_words = filtered_words
 
     async def connect(self):
         await super().connect()
@@ -62,6 +67,9 @@ class KrabBot(commands.Bot):
     async def event_message(self, message):
         usr = message.author.name
         content = message.content
+
+        if (await self.has_slurs(content)):
+            content = '!filtered'
 
         print("-------------incoming_message: User: " + usr + "Message: " + content)
 
@@ -129,6 +137,10 @@ class KrabBot(commands.Bot):
         else:
             await speak_and_cleanup() #tts can be async
 
-
-
+    async def has_slurs(self, message):
+        lower = message.lower()
+        for word in self.filtered_words:
+            if word in lower:
+                return True
+        return False
         

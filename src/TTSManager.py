@@ -1,11 +1,11 @@
 import os
 from RealtimeTTS import TextToAudioStream
-from RealtimeTTS import AzureEngine
+#from RealtimeTTS import AzureEngine
 from RealtimeTTS import SystemEngine
 import asyncio
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
-import random
+#import random
 
 class TextToSpeech:
     text : str
@@ -13,15 +13,15 @@ class TextToSpeech:
 
     def __init__(self, id):
         print("Creating TTS instance")
-        self.engine = AzureEngine(speech_key=os.environ["AZURE_SPEECH_KEY"], service_region="uksouth")
-        #self.engine = SystemEngine()
+        #self.engine = AzureEngine(speech_key=os.environ["AZURE_SPEECH_KEY"], service_region="uksouth")
+        self.engine = SystemEngine()
 
         self.stream = TextToAudioStream(self.engine)
 
         #print(self.stream.engine.get_voices())
 
         #self.stream.engine.set_voice("LolaNeural")
-        self.stream.engine.set_voice("FlorianMultilingualNeural")
+        #self.stream.engine.set_voice("FlorianMultilingualNeural")
 
         self.id = id
 
@@ -38,7 +38,7 @@ class TextToSpeech:
         #random_index = random.randint(0, len(voices) - 1)
         #self.stream.engine.set_voice(voices[random_index])
 
-        audio_filename = "output.wav" + str(self.id)
+        audio_filename = "output" + str(self.id) + ".wav"
         audio_path = os.path.join(os.getcwd(), 'audio', audio_filename)
 
         if obs_comms is not None:
