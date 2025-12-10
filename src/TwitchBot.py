@@ -2,7 +2,7 @@ import copy
 from twitchio.ext import commands
 import os
 import asyncio
-from TwitchPlays import process_twitch_input
+from TwitchPlays import process_twitch_input, input
 from OBSIntegration import OBSComms
 from TTSImplementation import TextToSpeechBase
 from DiscordIntegration import DiscordBot
@@ -51,10 +51,13 @@ class KrabBot(commands.Bot):
 
         print("-------------incoming_message: User: " + usr + "Message: " + content)
 
+        #await process_twitch_input('crank')
+
         #TWITCH PLAYS
         if self.twitch_input_enabled: 
-            if await process_twitch_input(content): #True if accepted input
-                return
+            await process_twitch_input(content) #True if accepted input
+            # if 
+            #    return
 
         #check if tts command
         if len(content) <= 1 or content[0] != '!':
