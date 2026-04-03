@@ -1,7 +1,7 @@
 from RealtimeTTS import TextToAudioStream, SystemEngine
 import asyncio
 import warnings
-from TTSImplementation import TextToSpeechBase
+from TTS_Base import TextToSpeechBase
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 class SystemTTS(TextToSpeechBase):

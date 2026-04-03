@@ -4,7 +4,7 @@ from elevenlabs import stream
 import asyncio
 import warnings
 import wave
-from TTSImplementation import TextToSpeechBase
+from TTS_Base import TextToSpeechBase
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 class ElevenLabsTTS(TextToSpeechBase):

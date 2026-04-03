@@ -1,13 +1,16 @@
 from dotenv import load_dotenv
-from ElevenLabsTTS import ElevenLabsTTS
-from SpeechToText import SpeechToText
-from TwitchBot import KrabBot
 import asyncio
 import os
-from SystemTTS import SystemTTS
-from DiscordIntegration import DiscordBot
-from OBSIntegration import OBSComms
-from SystemTTS import SystemTTS
+
+from TwitchBot import KrabBot
+
+from Integration_Discord import DiscordBot
+from Integration_OBS import OBSComms
+
+from TTS_Base import TextToSpeechBase
+from TTS_ElevenLabs import ElevenLabsTTS
+
+from SpeechToText import SpeechToText
 
 #BUG:spam whilst the TTS is beign read out makes the files get replaced before the next tts is read out so it never gets read out, just reads the latest multiple times
 
@@ -17,28 +20,26 @@ from SystemTTS import SystemTTS
 async def main():
     print("Starting KrabBot...")
 
-#####    
-    twitch_input_enabled = False
+    twitch_input_enabled:bool = False
 
-    bot = None #discord bot
-    obs = None #obs integration
-    tts = None #text to speech
-    stt = None #speech to text
+    # Declaration
+    bot:DiscordBot = None
+    obs:OBSComms = None 
+    tts:TextToSpeechBase = None
+    stt:SpeechToText = None
 
-    #stt = SpeechToText(api_key=os.environ["ELEVEN_LABS_KEY"], model_id="")
-    if stt is not None:
-        stt.start()
-
-    #tts = SystemTTS()
-    tts = ElevenLabsTTS(api_key=os.environ["ELEVEN_LABS_KEY"], voice="xJ6quMToF3QzDncP3TLF", model_id="")
-
-    bot = DiscordBot()
-    if bot is not None:
-        asyncio.create_task(bot.start(os.getenv("DISCORD_BOT_TOKEN")))
-
+    # Initialization
+    #bot = DiscordBot()
     #obs = OBSComms()
+    #tts = SystemTTS()
+    #tts = ElevenLabsTTS(api_key=os.environ["ELEVEN_LABS_KEY"], voice="xJ6quMToF3QzDncP3TLF", model_id="")
+    #stt = SpeechToText(api_key=os.environ["ELEVEN_LABS_KEY"], model_id="")
 
-    twitch_bot = KrabBot(   
+    # Launch
+    if bot is not None: asyncio.create_task(bot.start(os.getenv("DISCORD_BOT_TOKEN")))
+    if stt is not None: stt.start()
+
+    twitch_bot:KrabBot = KrabBot(   
                         tts_engine=tts,
                         twitch_input_enabled=twitch_input_enabled, 
                         discord_bot=bot, 
@@ -47,9 +48,10 @@ async def main():
                         )
     await twitch_bot.connect()
 
-    print ("Bot connected. Listening for messages...")
-######
+    await handle_input(twitch_bot=twitch_bot)
+    return
 
+async def handle_input(twitch_bot:KrabBot):
     while True:
         async def handle_exit(_):
             return False
@@ -68,19 +70,13 @@ async def main():
             "stoptts": stop_tts,
         }
 
-        model_input_keyword = "input:"
         while True:
-            user_input = await asyncio.to_thread(input, "Enter input:\n")
-            content = user_input.strip()
+            user_input:str = str(await asyncio.to_thread(input, "Enter input:\n")).strip()
+            cmd:str = user_input.lower().strip()
+            arg:str = ""
 
-            #commands
-            if ':' in content:
-                cmd, arg = content.split(':', 1)
-                cmd = cmd.strip().lower()
-                arg = arg.strip()
-            else:
-                cmd = content.lower()
-                arg = ""
+            if ':' in user_input:
+                cmd, arg = user_input.split(':', 1)
 
             if cmd in commands:
                 if len(arg) > 0:
@@ -92,15 +88,10 @@ async def main():
                     break
                 continue
 
-            #manual model input
-            if content.lower().startswith(model_input_keyword):
-                message = content[len(model_input_keyword):].strip()
-                await twitch_bot.handle_model_response('krabgor', message)
-            else:
-                print("Invalid input:" + user_input)
+            print("Invalid input:" + user_input)
 
 def load_filtered_words():
-    slurs = []
+    slurs:list[str] = []
     if os.path.exists("censoredwords"):
         with open("censoredwords", "r") as f:
             slurs = [line.strip().lower() for line in f if line.strip()]

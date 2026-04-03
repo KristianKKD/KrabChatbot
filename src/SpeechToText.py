@@ -2,8 +2,6 @@ from io import BytesIO
 import os
 import asyncio
 import warnings
-from dotenv import load_dotenv
-
 
 from elevenlabs.client import ElevenLabs
 

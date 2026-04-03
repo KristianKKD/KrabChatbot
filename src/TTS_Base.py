@@ -1,7 +1,7 @@
 import os
 import asyncio
 import warnings
-from DiscordIntegration import DiscordBot
+from Integration_Discord import DiscordBot
 from abc import ABC, abstractmethod
 
 warnings.filterwarnings("ignore", category=FutureWarning)

@@ -3,27 +3,27 @@ from twitchio.ext import commands
 import os
 import asyncio
 from TwitchPlays import process_twitch_input, input
-from OBSIntegration import OBSComms
-from TTSImplementation import TextToSpeechBase
-from DiscordIntegration import DiscordBot
+from Integration_OBS import OBSComms
+from TTS_Base import TextToSpeechBase
+from Integration_Discord import DiscordBot
 
 
 class KrabBot(commands.Bot):
-    twitch_input_enabled = False
+    twitch_input_enabled:bool = False
 
-    tts_inprogress = []
+    tts_inprogress:list[TextToSpeechBase] = []
 
-    tts_engine : TextToSpeechBase
-    discord_bot : DiscordBot
-    obs_comms : OBSComms
+    tts_engine:TextToSpeechBase
+    discord_bot:DiscordBot
+    obs_comms:OBSComms
 
-    filtered_words = []
+    filtered_words:list[str] = []
 
-    def __init__(self,  tts_engine = None,
-                        twitch_input_enabled = False, 
-                        discord_bot = None, 
-                        obs_comms = None,
-                        filtered_words = []
+    def __init__(self,  tts_engine:TextToSpeechBase = None,
+                        twitch_input_enabled:bool = False, 
+                        discord_bot:DiscordBot = None, 
+                        obs_comms:OBSComms = None,
+                        filtered_words:list[str] = []
                 ):
         super().__init__(
             token=os.environ["TWITCH_TOKEN"],
@@ -38,33 +38,34 @@ class KrabBot(commands.Bot):
         self.discord_bot = discord_bot
         self.obs_comms = obs_comms
         self.filtered_words = filtered_words
+        return
 
     async def connect(self):
         await super().connect()
+        print ("Bot connected. Listening for messages...")
+        return
 
     async def event_message(self, message):
-        usr = message.author.name
-        content = message.content
+        usr:str = message.author.name
+        content:str = message.content
 
-        if (await self.has_slurs(content)):
+        if (self.has_slurs(content)):
             content = '!filtered'
 
         print("-------------incoming_message: User: " + usr + "Message: " + content)
 
-        #await process_twitch_input('crank')
-
         #TWITCH PLAYS
         if self.twitch_input_enabled: 
             await process_twitch_input(content) #True if accepted input
-            # if 
-            #    return
+            return
 
         #check if tts command
         if len(content) <= 1 or content[0] != '!':
             return #ignore commands too small
-        content = content[1:] #strip the !
+        content = content[1:] #strip the first !
 
         asyncio.create_task(self.speak(content, user=usr))
+        return
 
     async def stop_tts(self):
         print("Stopping all TTS messages")
@@ -73,9 +74,10 @@ class KrabBot(commands.Bot):
         if self.discord_bot is not None:
             self.discord_bot.stop_tts()
         self.tts_inprogress = []
+        return
 
     async def speak(self, text = "", user = ""):
-        tts = copy.copy(self.tts_engine)
+        tts:TextToSpeechBase = copy.copy(self.tts_engine)
         self.tts_inprogress.append(tts)
 
         #run in background so no blocking
@@ -85,11 +87,8 @@ class KrabBot(commands.Bot):
                 self.tts_inprogress.remove(tts)
 
         asyncio.create_task(speak_and_cleanup())
+        return
 
-    async def has_slurs(self, message):
-        lower = message.lower()
-        for word in self.filtered_words:
-            if word in lower:
-                return True
-        return False
+    def has_slurs(self, message:str) -> bool:
+        return any(word in message.lower() for word in self.filtered_words)
         

@@ -1,14 +1,14 @@
 #python 3.10.6
 
-twitchio
-dotenv
-discord
-RealtimeTTS[azure]
-RealtimeTTS[system]
-requests
-flask
-ffmpeg
-websocket
-keyboard
-PyNaCl
-ffprobe
+twitchio==2.10.0
+dotenv==0.9.9
+discord==2.3.2
+RealtimeTTS[azure]==0.5.7
+RealtimeTTS[system]==0.5.7
+requests==2.32.5
+flask==3.1.2
+ffmpeg==1.4
+websocket==0.2.1
+keyboard==0.13.5
+PyNaCl==1.6.1
+ffprobe==0.5
