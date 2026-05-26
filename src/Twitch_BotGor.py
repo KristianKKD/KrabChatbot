@@ -2,11 +2,11 @@ import copy
 from twitchio.ext import commands
 import os
 import asyncio
-from TwitchPlays import process_twitch_input, input
+from Twitch_TwitchPlays import process_twitch_input, input
 from Integration_OBS import OBSComms
 from TTS_Base import TextToSpeechBase
 from Integration_Discord import DiscordBot
-
+from Integration_CE import CheatEngine
 
 class KrabBot(commands.Bot):
     twitch_input_enabled:bool = False
@@ -23,6 +23,7 @@ class KrabBot(commands.Bot):
                         twitch_input_enabled:bool = False, 
                         discord_bot:DiscordBot = None, 
                         obs_comms:OBSComms = None,
+                        cheat_engine:CheatEngine = None,
                         filtered_words:list[str] = []
                 ):
         super().__init__(
@@ -45,7 +46,7 @@ class KrabBot(commands.Bot):
         print ("Bot connected. Listening for messages...")
         return
 
-    async def event_message(self, message):
+    async def event_message(self, message:commands.bot.Message):
         usr:str = message.author.name
         content:str = message.content
 
@@ -54,17 +55,22 @@ class KrabBot(commands.Bot):
 
         print("-------------incoming_message: User: " + usr + "Message: " + content)
 
-        #TWITCH PLAYS
+        # TWITCH PLAYS
         if self.twitch_input_enabled: 
-            await process_twitch_input(content) #True if accepted input
-            return
+            if await process_twitch_input(content=content): # True if accepted input
+                return
 
-        #check if tts command
-        if len(content) <= 1 or content[0] != '!':
-            return #ignore commands too small
-        content = content[1:] #strip the first !
+        # CE
+        if self.cheat_engine:
+            if await process_ce_input(content=content): # True if accepted input
+                return
 
-        asyncio.create_task(self.speak(content, user=usr))
+        # TTS
+        if len(content) <= 1 or content[0] != self._prefix:
+            return 
+        content = content[1:] # Strip the first instance of the prefix
+        asyncio.create_task(self.speak(text=content, user=usr))
+
         return
 
     async def stop_tts(self):
@@ -76,13 +82,17 @@ class KrabBot(commands.Bot):
         self.tts_inprogress = []
         return
 
-    async def speak(self, text = "", user = ""):
+    async def speak(self, text:str="", user:str=""):
         tts:TextToSpeechBase = copy.copy(self.tts_engine)
         self.tts_inprogress.append(tts)
 
         #run in background so no blocking
         async def speak_and_cleanup():
-            await tts.speak(text=text, user=user, discord_bot=self.discord_bot, obs_comms=self.obs_comms)
+            await tts.speak(text=text, 
+                            user=user,
+                            discord_bot=self.discord_bot,
+                            obs_comms=self.obs_comms
+                            )
             if tts in self.tts_inprogress:
                 self.tts_inprogress.remove(tts)
 

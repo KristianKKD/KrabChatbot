@@ -2,22 +2,23 @@ from dotenv import load_dotenv
 import asyncio
 import os
 
-from TwitchBot import KrabBot
+from Twitch_BotGor import KrabBot
 
 from Integration_Discord import DiscordBot
 from Integration_OBS import OBSComms
 
 from TTS_Base import TextToSpeechBase
+from TTS_System import SystemTTS
 from TTS_ElevenLabs import ElevenLabsTTS
 
 from SpeechToText import SpeechToText
 
-#BUG:spam whilst the TTS is beign read out makes the files get replaced before the next tts is read out so it never gets read out, just reads the latest multiple times
+#BUG:spam whilst the TTS is being read out makes the files get replaced before the next tts is read out so it never gets read out, just reads the latest multiple times
 
-#TODO: [voice] hello i am reall cool
-#TODO: look into adding timings
+#TODO: [voice] hello i am really cool (add voice selection to TTS)
+#TODO: look into adding timings for tts (e.g. slooooow fast)
 
-async def main():
+async def launch_botgor():
     print("Starting KrabBot...")
 
     twitch_input_enabled:bool = False
@@ -103,4 +104,4 @@ if __name__ == "__main__":
     if not os.environ["TWITCH_TOKEN"] or not os.environ["TWITCH_CLIENT_ID"]:
         raise ValueError("TWITCH_TOKEN and TWITCH_CLIENT_ID must be set in the environment variables.")
     
-    asyncio.run(main())
+    asyncio.run(launch_botgor())

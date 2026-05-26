@@ -56,9 +56,11 @@ class OBSComms:
         self.ws.send(json.dumps(user_request))
 
         self.sock.sendto(b"TextUpdated", (HOST, PORT)) #show text
+        return
 
     def hide_text(self):
         self.sock.sendto(b"TextTimedOut", (HOST, PORT))
+        return
 
     def insert_newlines(self, text, n):
         return '\n'.join(textwrap.wrap(text, width=n))
@@ -70,16 +72,17 @@ class OBSComms:
                     (os.environ["OBS_WEBSOCKET_PASSWORD"] + salt).encode('utf-8')
                 ).digest()
             )
+
             auth = base64.b64encode(
                 hashlib.sha256(
                     secret + challenge.encode('utf-8')
                 ).digest()
             ).decode('utf-8')
+
             return auth
 
         message = self.ws.recv()
         result = json.loads(message) 
-        #server_version = result['d'].get('obsWebSocketVersion')
         auth = _build_auth_string(result['d']['authentication']['salt'], result['d']['authentication']['challenge'])
 
         payload = {
@@ -93,6 +96,6 @@ class OBSComms:
         }
         self.ws.send(json.dumps(payload))
         message = self.ws.recv()
-        # Message Identified...or so we assume...probably good to check if this is empty or not.
         result = json.loads(message)
         print(result)
+        return
